@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Commission Split Calculator — The Bly Team (Recruit Card)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<script src="engine.js"></script>
+<style>
+  :root {
+    --royal: #00519B;
+    --royal-bright: #1a6fc4;
+    --royal-dk: #033b6e;
+    --navy: #0a2342;
+    --ink: #16243a;
+    --ink-dim: #5d6f87;
+    --ink-faint: #93a1b5;
+    --paper: #ffffff;
+    --wash: #f1f5fa;
+    --line: #e6ecf4;
+    --green: #1a8a5a;
+    --green-soft: #eaf6f0;
+    --amber: #c98a2b;
+    --shadow: 0 40px 90px -40px rgba(10,35,66,0.45);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Manrope', system-ui, sans-serif;
+    background: linear-gradient(180deg, #0a2342 0%, #0d2d55 200px, #e9eff6 360px, #eef3f9 100%);
+    background-attachment: fixed;
+    min-height: 100vh; color: var(--ink); -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+  }
+  .page { max-width: 720px; margin: 0 auto; padding: 30px 18px 60px; }
+
+  /* Header band */
+  .head {
+    display: flex; align-items: center; justify-content: space-between; gap: 16px;
+    margin-bottom: 22px;
+  }
+  .head img { height: 34px; }
+  .head .pill {
+    font-size: 11px; font-weight: 700; letter-spacing: 0.16em; text-transform: uppercase;
+    color: rgba(255,255,255,0.75); border: 1px solid rgba(255,255,255,0.25); border-radius: 999px; padding: 7px 13px;
+  }
+
+  .card { background: var(--paper); border-radius: 22px; box-shadow: var(--shadow); overflow: hidden; }
+
+  /* Intro */
+  .intro { padding: 30px 32px 8px; text-align: center; }
+  .intro h1 {
+    font-size: clamp(21px, 4.4vw, 27px); font-weight: 800; letter-spacing: -0.02em; line-height: 1.18;
+  }
+  .intro p { margin-top: 9px; color: var(--ink-dim); font-size: 14.5px; font-weight: 500; line-height: 1.55; }
+
+  /* Inputs */
+  .inputs { padding: 22px 32px 4px; display: grid; gap: 14px; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .fld label { display: block; font-size: 12.5px; font-weight: 700; color: var(--ink-dim); margin-bottom: 7px; }
+  .ctrl {
+    display: flex; align-items: center; gap: 6px; height: 50px; padding: 0 14px;
+    border: 1.5px solid var(--line); border-radius: 13px; background: var(--wash);
+    transition: border-color .15s, box-shadow .15s, background .15s;
+  }
+  .ctrl:focus-within { border-color: var(--royal); background: #fff; box-shadow: 0 0 0 3px rgba(0,81,155,0.1); }
+  .ctrl .affix { color: var(--ink-faint); font-weight: 800; font-size: 16px; }
+  .ctrl input {
+    flex: 1; width: 100%; border: none; outline: none; background: none;
+    font-size: 17px; font-weight: 700; color: var(--ink); font-family: inherit; font-variant-numeric: tabular-nums;
+  }
+  .ctrl input::-webkit-outer-spin-button, .ctrl input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .ctrl input.locked { color: var(--ink-faint); cursor: not-allowed; }
+  .ctrl:has(input.locked) { background: #eef2f7; border-style: dashed; }
+  select.sel {
+    width: 100%; height: 50px; border: 1.5px solid var(--line); border-radius: 13px; background: var(--wash);
+    color: var(--ink); font-family: inherit; font-size: 14.5px; font-weight: 700; padding: 0 38px 0 14px;
+    outline: none; cursor: pointer; appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%2393a1b5' stroke-width='1.8' fill='none' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat; background-position: right 14px center; transition: border-color .15s, box-shadow .15s;
+  }
+  .sel:focus { border-color: var(--royal); box-shadow: 0 0 0 3px rgba(0,81,155,0.1); background: #fff; }
+
+  .segment { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; background: var(--wash); border: 1.5px solid var(--line); border-radius: 13px; padding: 4px; height: 50px; }
+  .segment button {
+    border: none; background: none; cursor: pointer; color: var(--ink-dim);
+    font-family: inherit; font-size: 14px; font-weight: 700; border-radius: 9px; transition: all .15s;
+  }
+  .segment button[aria-pressed="true"] { background: var(--royal); color: #fff; }
+
+  /* Advanced toggles (chips) */
+  .adv { padding: 8px 32px 0; }
+  .adv-h {
+    display: flex; align-items: center; gap: 10px; margin: 8px 0 12px;
+    font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint);
+  }
+  .adv-h::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .chips { display: flex; flex-wrap: wrap; gap: 9px; }
+  .chip-tog {
+    display: inline-flex; align-items: center; gap: 8px; cursor: pointer; user-select: none;
+    padding: 9px 14px; border: 1.5px solid var(--line); border-radius: 999px; background: #fff;
+    font-size: 13px; font-weight: 700; color: var(--ink-dim); transition: all .15s;
+  }
+  .chip-tog .tick { width: 16px; height: 16px; border-radius: 5px; border: 1.5px solid var(--ink-faint); display: grid; place-items: center; transition: all .15s; }
+  .chip-tog .tick svg { width: 10px; height: 10px; opacity: 0; }
+  .chip-tog input { display: none; }
+  .chip-tog input:checked ~ .tick { background: var(--royal); border-color: var(--royal); }
+  .chip-tog input:checked ~ .tick svg { opacity: 1; }
+  .chip-tog:has(input:checked) { border-color: var(--royal); color: var(--royal); background: #f2f8fe; }
+  .postcap { margin-top: 12px; max-height: 0; overflow: hidden; transition: max-height .25s ease; }
+  .postcap.open { max-height: 90px; }
+
+  /* Hero result */
+  .result { margin: 24px 14px 0; background: linear-gradient(165deg, #0c2c54, #0a2342); border-radius: 20px; padding: 30px 28px 26px; text-align: center; color: #fff; position: relative; overflow: hidden; }
+  .result::after { content:""; position:absolute; left:50%; top:-40%; width:340px; height:340px; transform:translateX(-50%); background: radial-gradient(circle, rgba(26,111,196,0.4), transparent 65%); pointer-events:none; }
+  .result .lab { font-size: 12.5px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; color: #93b2d6; margin-bottom: 8px; }
+  .result .num { font-size: clamp(46px, 11vw, 68px); font-weight: 800; letter-spacing: -0.03em; line-height: 1; }
+  .result .num .cents { font-size: 0.4em; color: #9fb9d8; font-weight: 700; }
+  .result .gross-note { margin-top: 12px; font-size: 13.5px; color: #b9c9dc; font-weight: 600; }
+  .result .gross-note b { color: #fff; font-weight: 800; }
+
+  /* Split bar */
+  .splits { padding: 24px 32px 6px; }
+  .splbar { display: flex; height: 40px; border-radius: 12px; overflow: hidden; gap: 3px; }
+  .splbar-seg { display: flex; align-items: center; justify-content: center; min-width: 0; transition: width .45s ease; position: relative; border-radius: 6px; }
+  .splbar-seg .pc { font-size: 13px; font-weight: 800; color: #fff; white-space: nowrap; }
+  .s-take { background: linear-gradient(135deg, #21a06a, #178a59); }
+  .s-exp { background: linear-gradient(135deg, #2a86e0, #1a6fc4); }
+  .s-office { background: linear-gradient(135deg, #8aa1bd, #6b85a4); }
+  .s-ref { background: linear-gradient(135deg, #e0a23f, #c9822a); }
+  .splkey { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-top: 16px; }
+  .splkey .k { text-align: left; }
+  .splkey .k .kdot { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; font-weight: 700; color: var(--ink-dim); white-space: nowrap; }
+  .splkey .k .kdot i { width: 10px; height: 10px; border-radius: 3px; display: inline-block; }
+  .splkey .k .kv { font-size: 16px; font-weight: 800; color: var(--ink); margin-top: 5px; }
+  .splkey .k .kv small { font-size: 12px; color: var(--ink-faint); font-weight: 700; }
+
+  /* See the math */
+  .math-tog {
+    margin: 18px 32px 0; width: calc(100% - 64px); display: flex; align-items: center; justify-content: center; gap: 9px;
+    height: 46px; border: 1.5px solid var(--line); border-radius: 12px; background: #fff; cursor: pointer;
+    font-family: inherit; font-size: 14px; font-weight: 700; color: var(--royal); transition: background .15s; white-space: nowrap;
+  }
+  .math-tog:hover { background: var(--wash); }
+  .math-tog .chev { transition: transform .25s; }
+  .math-tog[aria-expanded="true"] .chev { transform: rotate(180deg); }
+  .math { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .math.open { max-height: 640px; }
+  .math-inner { padding: 16px 32px 4px; }
+  .mrow { display: flex; align-items: center; justify-content: space-between; gap: 14px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 14px; }
+  .mrow:last-child { border-bottom: none; }
+  .mrow .ml { color: var(--ink-dim); font-weight: 600; }
+  .mrow .ml b { color: var(--ink); font-weight: 700; }
+  .mrow .mv { font-weight: 800; color: var(--ink); white-space: nowrap; }
+  .mrow.neg .mv { color: #c2553f; }
+  .mrow.tot { border-top: 2px solid var(--ink); border-bottom: none; margin-top: 4px; padding-top: 14px; }
+  .mrow.tot .ml { color: var(--ink); font-weight: 800; font-size: 15px; }
+  .mrow.tot .mv { color: var(--green); font-size: 17px; }
+
+  /* Actions */
+  .acts { display: flex; gap: 12px; padding: 22px 32px 30px; flex-wrap: wrap; }
+  .btn { flex: 1; min-width: 140px; height: 52px; border-radius: 13px; cursor: pointer; font-family: inherit; font-size: 14.5px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; gap: 9px; border: 1.5px solid var(--line); background: #fff; color: var(--ink); transition: all .15s; }
+  .btn:hover { border-color: var(--royal); }
+  .btn.primary { background: var(--royal); border-color: var(--royal); color: #fff; }
+  .btn.primary:hover { background: var(--royal-dk); }
+  .btn svg { width: 17px; height: 17px; }
+
+  .foot { text-align: center; margin-top: 22px; font-size: 11.5px; color: rgba(255,255,255,0.55); line-height: 1.6; padding: 0 10px; }
+  .toast { position: fixed; bottom: 26px; left: 50%; transform: translateX(-50%) translateY(20px); background: var(--navy); color: #fff; padding: 13px 22px; border-radius: 12px; font-size: 14px; font-weight: 700; box-shadow: var(--shadow); opacity: 0; pointer-events: none; transition: all .2s; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 560px) {
+    .intro, .inputs, .adv, .splits, .math-inner { padding-left: 20px; padding-right: 20px; }
+    .acts { padding-left: 20px; padding-right: 20px; }
+    .grid2 { grid-template-columns: 1fr; }
+    .result { margin-left: 10px; margin-right: 10px; }
+    .math-tog { margin-left: 20px; margin-right: 20px; width: calc(100% - 40px); }
+    .splkey { grid-template-columns: 1fr; gap: 8px; }
+    .splkey .k { display: flex; align-items: center; justify-content: space-between; }
+    .splkey .k .kv { margin-top: 0; }
+  }
+  @media print { body { background: #fff; } .head .pill, .acts, .math-tog { display: none !important; } .math { max-height: none !important; } .card { box-shadow: none; } }
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="head">
+    <img src="assets/bly-white.png" alt="The Bly Team" />
+    <span class="pill">eXp Realty</span>
+  </div>
+
+  <div class="card">
+    <div class="intro">
+      <h1>See what you'd take home on your next deal</h1>
+      <p>Enter a sample transaction and we'll show your net commission with The Bly Team at eXp Realty — every split and fee accounted for.</p>
+    </div>
+
+    <div class="inputs">
+      <div class="grid2">
+        <div class="fld">
+          <label for="price" id="priceLabel">Closing price</label>
+          <div class="ctrl"><span class="affix">$</span><input id="price" inputmode="numeric" value="500,000" autocomplete="off" /></div>
+        </div>
+        <div class="fld">
+          <label for="commission" id="commissionLabel">Commission rate</label>
+          <div class="ctrl"><input id="commission" inputmode="decimal" value="3" autocomplete="off" /><span class="affix">%</span></div>
+        </div>
+      </div>
+      <div class="grid2">
+        <div class="fld">
+          <label for="leadSource">Lead source</label>
+          <select class="sel" id="leadSource"></select>
+        </div>
+        <div class="fld">
+          <label id="sideLabel">Representing</label>
+          <div class="segment" id="sideSeg">
+            <button type="button" data-side="Buyer" aria-pressed="false"><span id="sideBuyerLabel">Buyer</span></button>
+            <button type="button" data-side="Seller" aria-pressed="true"><span id="sideSellerLabel">Seller</span></button>
+          </div>
+        </div>
+      </div>
+      <div class="fld">
+        <label for="level">Your level / tier</label>
+        <select class="sel" id="level"></select>
+      </div>
+    </div>
+
+    <div class="adv">
+      <div class="adv-h">Adjustments</div>
+      <div class="chips">
+        <label class="chip-tog"><input type="checkbox" id="isa" /><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span> ISA-converted lead</label>
+        <label class="chip-tog"><input type="checkbox" id="mentor" /><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span> Mentor on deal</label>
+        <label class="chip-tog"><input type="checkbox" id="cappedExp" /><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span> eXp split capped</label>
+        <label class="chip-tog"><input type="checkbox" id="cappedRisk" /><span class="tick"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l4 4 10-10"/></svg></span> Risk fee capped</label>
+      </div>
+      <div class="postcap" id="postCapWrap">
+        <div class="fld" style="margin-top:12px;">
+          <label for="postCapFee">Post-cap transaction fee</label>
+          <select class="sel" id="postCapFee">
+            <option value="N/A">N/A — none</option>
+            <option value="$250/tx">$250 / transaction</option>
+            <option value="$75/tx">$75 / transaction</option>
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <div class="result">
+      <div class="lab">Your estimated take-home</div>
+      <div class="num" id="takeHome">$0</div>
+      <div class="gross-note">From a <b id="grossNote">$0</b> gross commission</div>
+    </div>
+
+    <div class="splits">
+      <div class="splbar" id="splbar">
+        <div class="splbar-seg s-take" id="segTake"><span class="pc" id="pcTake"></span></div>
+        <div class="splbar-seg s-exp" id="segExp"><span class="pc" id="pcExp"></span></div>
+        <div class="splbar-seg s-office" id="segOffice"><span class="pc" id="pcOffice"></span></div>
+        <div class="splbar-seg s-ref" id="segRef" style="width:0;"><span class="pc" id="pcRef"></span></div>
+      </div>
+      <div class="splkey" id="splkey">
+        <div class="k"><span class="kdot"><i style="background:#178a59;"></i>You keep</span><div class="kv" id="kvTake">$0</div></div>
+        <div class="k"><span class="kdot"><i style="background:#1a6fc4;"></i>eXp fees</span><div class="kv" id="kvExp">$0</div></div>
+        <div class="k"><span class="kdot"><i style="background:#6b85a4;"></i>Team / office</span><div class="kv" id="kvOffice">$0</div></div>
+        <div class="k" id="kRefWrap" style="display:none;"><span class="kdot"><i style="background:#c9822a;"></i>Zillow referral</span><div class="kv" id="kvRef">$0</div></div>
+      </div>
+    </div>
+
+    <button class="math-tog" id="mathTog" aria-expanded="false">
+      <span>See the math</span>
+      <svg class="chev" width="13" height="8" viewBox="0 0 13 8" fill="none"><path d="M1 1l5.5 5.5L12 1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+    <div class="math" id="math"><div class="math-inner" id="mathInner"></div></div>
+
+    <div class="acts">
+      <button class="btn" id="shareBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.6" y1="13.5" x2="15.4" y2="17.5"/><line x1="15.4" y1="6.5" x2="8.6" y2="10.5"/></svg>
+        Share this estimate
+      </button>
+      <button class="btn primary" id="pdfBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9V2h12v7"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+        Save as PDF
+      </button>
+    </div>
+  </div>
+
+  <p class="foot">Estimates only, based on The Bly Team commission schedule and standard eXp Realty fees. Actual payouts vary with cap status, transaction specifics, and brokerage policy at closing. Not a guarantee of compensation.</p>
+</div>
+<div class="toast" id="toast">Link copied</div>
+
+<script>
+(function () {
+  "use strict";
+  const E = window.SplitEngine;
+  const $ = (id) => document.getElementById(id);
+  const state = { price: 500000, commission: 0.03, leadSource: "SOI Generated", level: "3", side: "Seller", isaConverted: false, mentor: false, cappedExp: false, cappedRisk: false, postCapFee: "N/A" };
+
+  const leadSel = $("leadSource");
+  E.LEAD_SOURCES.forEach((s) => { const o = document.createElement("option"); o.value = s; o.textContent = s; leadSel.appendChild(o); });
+  function refreshLevels() {
+    const sel = $("level"); const valid = E.LEVELS_BY_SOURCE[state.leadSource] || [];
+    sel.innerHTML = "";
+    valid.forEach((lv) => { const o = document.createElement("option"); o.value = lv; o.textContent = E.LEVEL_LABELS[lv]; sel.appendChild(o); });
+    if (!valid.includes(state.level)) state.level = valid[0];
+    sel.value = state.level;
+  }
+  const parseMoney = (s) => { const n = parseFloat(String(s).replace(/[^0-9.]/g, "")); return isNaN(n) ? 0 : n; };
+
+  function render() {
+    const r = E.compute(state); const f = E.fmtUSD; const pct = E.fmtPct;
+    const dollars = Math.floor(Math.max(r.takeHome, 0));
+    const cents = Math.round((r.takeHome - Math.floor(r.takeHome)) * 100);
+    $("takeHome").innerHTML = "$" + dollars.toLocaleString("en-US") + '<span class="cents">.' + String(cents).padStart(2, "0") + "</span>";
+    $("grossNote").textContent = f(r.gross);
+
+    const others = r.officeShare + r.mentorCut;
+    const tot = Math.max(r.gross, 1);
+    const tp = Math.max(0, r.takeHome / tot), ep = Math.max(0, r.totalExpFees / tot), op = Math.max(0, others / tot), rp = Math.max(0, r.zillowReferral / tot);
+    $("segTake").style.width = (tp * 100) + "%";
+    $("segExp").style.width = (ep * 100) + "%";
+    $("segOffice").style.width = (op * 100) + "%";
+    $("segRef").style.width = (rp * 100) + "%";
+    $("pcTake").textContent = tp > 0.08 ? Math.round(tp * 100) + "%" : "";
+    $("pcExp").textContent = ep > 0.08 ? Math.round(ep * 100) + "%" : "";
+    $("pcOffice").textContent = op > 0.08 ? Math.round(op * 100) + "%" : "";
+    $("pcRef").textContent = rp > 0.08 ? Math.round(rp * 100) + "%" : "";
+    $("kvTake").innerHTML = f(r.takeHome) + ' <small>' + pct(tp, 0) + '</small>';
+    $("kvExp").innerHTML = f(r.totalExpFees) + ' <small>' + pct(ep, 0) + '</small>';
+    $("kvOffice").innerHTML = f(others) + ' <small>' + pct(op, 0) + '</small>';
+    $("kvRef").innerHTML = f(r.zillowReferral) + ' <small>' + pct(rp, 0) + '</small>';
+    const hasRef = r.zillowReferral > 0;
+    $("kRefWrap").style.display = hasRef ? "" : "none";
+    $("splkey").style.gridTemplateColumns = `repeat(${hasRef ? 4 : 3}, 1fr)`;
+
+    const commDp = (state.commission * 100) % 1 ? 2 : 1;
+    const M = [];
+    if (r.isLease) {
+      M.push(`<div class="mrow"><span class="ml">Lease commission <b>(50% of one month's rent)</b></span><span class="mv">${f(r.gross)}</span></div>`);
+    } else {
+      M.push(`<div class="mrow"><span class="ml">Gross commission <b>(${pct(state.commission, commDp)} of ${f(state.price)})</b></span><span class="mv">${f(r.gross)}</span></div>`);
+    }
+    if (r.zillowReferral > 0) {
+      M.push(`<div class="mrow neg"><span class="ml">Zillow referral <b>(40% off the top)</b></span><span class="mv">− ${f(r.zillowReferral)}</span></div>`);
+      M.push(`<div class="mrow"><span class="ml"><b>Net commission to split</b></span><span class="mv">${f(r.splitBase)}</span></div>`);
+    }
+    M.push(`<div class="mrow"><span class="ml">Your split <b>(${pct(r.agentPct)})</b></span><span class="mv">${f(r.agentBaseShare)}</span></div>`);
+    if (r.mentorCut > 0) M.push(`<div class="mrow neg"><span class="ml">Mentor <b>(15% of your share)</b></span><span class="mv">− ${f(r.mentorCut)}</span></div>`);
+    M.push(`<div class="mrow"><span class="ml">Team / office <b>(${pct(r.officePct)})</b></span><span class="mv">${f(r.officeShare)}</span></div>`);
+    M.push(`<div class="mrow neg"><span class="ml">eXp company split ${r.expCompanySplit ? "(20%)" : "(capped)"}</span><span class="mv">− ${f(r.expCompanySplit)}</span></div>`);
+    M.push(`<div class="mrow neg"><span class="ml">Risk management ${r.riskMgmtFee ? "" : "(capped)"}</span><span class="mv">− ${f(r.riskMgmtFee)}</span></div>`);
+    M.push(`<div class="mrow neg"><span class="ml">Broker review</span><span class="mv">− ${f(r.brokerReview)}</span></div>`);
+    if (r.postCapTxFee > 0) M.push(`<div class="mrow neg"><span class="ml">Transaction fee</span><span class="mv">− ${f(r.postCapTxFee)}</span></div>`);
+    M.push(`<div class="mrow tot"><span class="ml">Your take-home</span><span class="mv">${f(r.takeHome)}</span></div>`);
+    $("mathInner").innerHTML = M.join("");
+  }
+
+  $("price").addEventListener("input", (e) => { state.price = parseMoney(e.target.value); render(); });
+  $("price").addEventListener("blur", (e) => { e.target.value = state.price ? state.price.toLocaleString("en-US") : ""; e.target.setAttribute("value", e.target.value); });
+  $("commission").addEventListener("input", (e) => { const n = parseFloat(String(e.target.value).replace(/[^0-9.]/g, "")); state.commission = isNaN(n) ? 0 : n / 100; render(); });
+  document.querySelectorAll("#sideSeg button").forEach((b) => { b.addEventListener("click", () => { state.side = b.dataset.side; document.querySelectorAll("#sideSeg button").forEach((x) => x.setAttribute("aria-pressed", x === b ? "true" : "false")); render(); }); });
+  function applyMode() {
+    const lease = state.leadSource === "Leases";
+    $("priceLabel").textContent = lease ? "Monthly rent" : "Closing price";
+    $("commissionLabel").textContent = lease ? "Lease fee" : "Commission rate";
+    $("sideLabel").textContent = "Representing";
+    $("sideBuyerLabel").textContent = lease ? "Tenant" : "Buyer";
+    $("sideSellerLabel").textContent = lease ? "Landlord" : "Seller";
+    const ci = $("commission");
+    ci.readOnly = lease;
+    ci.classList.toggle("locked", lease);
+    if (lease) ci.value = "50";
+    else ci.value = +(state.commission * 100).toFixed(4).replace(/\.?0+$/, "") || 0;
+    ci.setAttribute("value", ci.value);
+  }
+
+  leadSel.addEventListener("change", (e) => { state.leadSource = e.target.value; refreshLevels(); applyMode(); render(); });
+  $("level").addEventListener("change", (e) => { state.level = e.target.value; render(); });
+  $("isa").addEventListener("change", (e) => { state.isaConverted = e.target.checked; render(); });
+  $("mentor").addEventListener("change", (e) => { state.mentor = e.target.checked; render(); });
+  $("cappedExp").addEventListener("change", (e) => { state.cappedExp = e.target.checked; render(); });
+  $("cappedRisk").addEventListener("change", (e) => { state.cappedRisk = e.target.checked; $("postCapWrap").classList.toggle("open", e.target.checked); render(); });
+  $("postCapFee").addEventListener("change", (e) => { state.postCapFee = e.target.value; render(); });
+
+  $("mathTog").addEventListener("click", () => { const o = $("math").classList.toggle("open"); $("mathTog").setAttribute("aria-expanded", o ? "true" : "false"); });
+
+  function showToast(m) { const t = $("toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1900); }
+  function encodeState() { const p = new URLSearchParams(); p.set("p", state.price); p.set("c", Math.round(state.commission * 10000)); p.set("ls", state.leadSource); p.set("lv", state.level); p.set("sd", state.side); p.set("isa", state.isaConverted ? 1 : 0); p.set("m", state.mentor ? 1 : 0); p.set("ce", state.cappedExp ? 1 : 0); p.set("cr", state.cappedRisk ? 1 : 0); p.set("pcf", state.postCapFee); return location.origin + location.pathname + "?" + p.toString(); }
+  function decodeState() { const p = new URLSearchParams(location.search); if (![...p.keys()].length) return; if (p.has("p")) state.price = parseFloat(p.get("p")) || 0; if (p.has("c")) state.commission = (parseFloat(p.get("c")) || 0) / 10000; if (p.has("ls")) state.leadSource = p.get("ls"); if (p.has("lv")) state.level = p.get("lv"); if (p.has("sd")) state.side = p.get("sd"); state.isaConverted = p.get("isa") === "1"; state.mentor = p.get("m") === "1"; state.cappedExp = p.get("ce") === "1"; state.cappedRisk = p.get("cr") === "1"; if (p.has("pcf")) state.postCapFee = p.get("pcf"); }
+  $("shareBtn").addEventListener("click", () => { const url = encodeState(); navigator.clipboard?.writeText(url).then(() => showToast("Link copied to clipboard"), () => showToast(url)); history.replaceState(null, "", url); });
+  $("pdfBtn").addEventListener("click", () => { $("math").classList.add("open"); $("mathTog").setAttribute("aria-expanded", "true"); setTimeout(() => window.print(), 120); });
+
+  decodeState();
+  (function syncUI() {
+    $("price").value = state.price ? state.price.toLocaleString("en-US") : "";
+    $("price").setAttribute("value", $("price").value);
+    $("commission").value = +(state.commission * 100).toFixed(4).replace(/\.?0+$/, "") || 0;
+    leadSel.value = state.leadSource; refreshLevels(); applyMode();
+    document.querySelectorAll("#sideSeg button").forEach((x) => x.setAttribute("aria-pressed", x.dataset.side === state.side ? "true" : "false"));
+    $("isa").checked = state.isaConverted; $("mentor").checked = state.mentor; $("cappedExp").checked = state.cappedExp; $("cappedRisk").checked = state.cappedRisk;
+    $("postCapWrap").classList.toggle("open", state.cappedRisk); $("postCapFee").value = state.postCapFee;
+  })();
+  render();
+})();
+</script>
+</body>
+</html>
